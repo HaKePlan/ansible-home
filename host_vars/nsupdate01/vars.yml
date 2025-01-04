@@ -1,0 +1,24 @@
+host_package_list:
+  - dnsutils
+
+wg_configs:
+  tycho:
+    address: 10.93.48.77/32
+    dns:
+      - 10.93.6.30
+      - 10.93.6.31
+    private_key: "{{ vault_wg_private_key }}"
+    allowed_ip:
+      - 10.93.48.48/23
+      - 10.88.0.0/13
+    server:
+      public_key: PW5owZSiBnPbtlAjHMpmD0f8UGuR9mwlbSxk8dMKQzk=
+      endpoint: tycho.scoutech.net:51822
+
+nsupdate:
+  key: shot
+  key_file: /home/gigu/ddyn-key
+  domain: pfuetze.shot.ddyn.ch
+  zone: shot.ddyn.ch
+  server: ddyn.scoute.ch
+  secret_key: "{{ vault_nsupdate_secret_key }}"

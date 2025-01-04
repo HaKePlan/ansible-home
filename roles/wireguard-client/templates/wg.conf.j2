@@ -1,0 +1,14 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+# {{ ansible_managed }}
+
+
+[Interface]
+Address = {{ item.value.address }}
+PrivateKey = {{ item.value.private_key }}
+DNS = {{ item.value.dns | join(', ')}}
+
+[Peer]
+PublicKey = {{ item.value.server.public_key }}
+AllowedIPs = {{ item.value.allowed_ip | join(', ') }}
+Endpoint = {{ item.value.server.endpoint }}
+PersistentKeepalive = 21

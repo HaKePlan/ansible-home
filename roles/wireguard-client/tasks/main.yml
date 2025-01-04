@@ -1,0 +1,25 @@
+---
+- name: Install wireguard and tools
+  ansible.builtin.apt:
+    name:
+      - iptables
+      - wireguard
+      - wireguard-tools
+    state: present
+
+- name: Create client config
+  ansible.builtin.template:
+    src: templates/wg.conf.j2
+    dest: /etc/wireguard/{{ item.key }}.conf
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ wg_configs | dict2items }}"
+
+- name: Enable wireguard services
+  ansible.builtin.systemd:
+    name: wg-quick@{{ item.key }}.service
+    state: started
+    enabled: true
+    daemon_reload: true
+  loop: "{{ wg_configs | dict2items }}"

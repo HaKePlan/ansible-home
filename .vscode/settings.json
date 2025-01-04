@@ -1,5 +1,5 @@
 {
-  "ansible.python.interpreterPath": "/Users/severinclauss/it-stuff/ansible-proxmox/venv/bin/python",
+  "ansible.python.interpreterPath": "/Users/severinclauss/it-stuff/ansible-home/venv/bin/python",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true
