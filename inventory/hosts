@@ -1,0 +1,2 @@
+[ipfire]
+stinkfisch ansible_host=10.130.2.1 ansible_user=root

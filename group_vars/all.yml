@@ -1,0 +1,14 @@
+local_user: gigu
+
+base_package_list:
+  - curl
+  - wget
+  - screen
+  - netcat-openbsd
+  - sudo
+  - vim
+  - git
+  - unzip
+  - htop
+  - qemu-guest-agent
+  - debian-goodies

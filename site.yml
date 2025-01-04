@@ -1,0 +1,4 @@
+---
+# basic setup of host / vm
+- ansible.builtin.import_playbook: playbooks/debian.yml
+- ansible.builtin.import_playbook: playbooks/base.yml

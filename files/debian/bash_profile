@@ -1,0 +1,18 @@
+# Ansible managed
+
+HISTSIZE=10000
+HISTFILESIZE=20000
+HISTTIMEFORMAT="%d/%m/%y %T "
+
+export VISUAL=vim
+export EDITOR="$VISUAL"
+
+# You may uncomment the following lines if you want `ls' to be colorized:
+export LS_OPTIONS='--color=auto'
+eval "`dircolors`"
+alias ls='ls $LS_OPTIONS'
+alias ll='ls $LS_OPTIONS -l'
+
+if [ -f ~/.bash_aliases ]; then
+. ~/.bash_aliases
+fi

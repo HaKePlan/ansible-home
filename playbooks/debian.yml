@@ -1,0 +1,65 @@
+---
+- hosts: debian
+  become: true
+  tasks:
+    - name: Set sources for bookworm
+      block:
+        - name: Set apt mirror (bookworm+)
+          ansible.builtin.copy:
+            dest: /etc/apt/mirrors/debian.list
+            content: https://mirror.init7.net/debian
+            owner: root
+            group: root
+            mode: "0644"
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Set bash_profile
+      ansible.builtin.copy:
+        src: files/debian/bash_profile
+        dest: /root/.bash_profile
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Deploy sshd config
+      ansible.builtin.copy:
+        src: files/debian/sshd_additional.conf
+        dest: /etc/ssh/sshd_config.d/additional.conf
+        owner: root
+        group: root
+        mode: "0644"
+      tags:
+        - ssh
+
+    - name: Override motd
+      ansible.builtin.copy:
+        src: "{{ motd_file }}"
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: "0644"
+      tags:
+        - motd
+
+    - name: Copy motd scripts
+      ansible.builtin.copy:
+        # trailing slash is important to just copy directory content
+        src: files/debian/motd.d/
+        dest: /etc/update-motd.d/
+        owner: root
+        group: root
+        mode: "0755"
+      tags:
+        - motd
+
+    - name: Enable locale
+      community.general.locale_gen:
+        name:
+          - en_US.UTF-8
+          - de_CH.UTF-8
+        state: present
+      tags:
+        - locale

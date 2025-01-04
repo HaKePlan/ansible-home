@@ -1,0 +1,14 @@
+---
+profile: production
+
+exclude_paths:
+  - .cache/
+  - .roles/
+  - .galaxy_collections/
+  - .pre-commit-config.yaml
+
+skip_list:
+  - name[play]
+  - galaxy
+  - role-name
+  - var-naming[no-role-prefix]

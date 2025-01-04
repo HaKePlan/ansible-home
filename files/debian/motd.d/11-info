@@ -1,0 +1,35 @@
+#!/bin/bash
+
+nic_list=$(ip link | grep -E " (ens|eth|enp|eno)[0-9]+[s0-9]*" | grep -v "altname" | awk '{print $2}' | tr -d ':')
+
+ipv4=""
+ipv6=""
+for nic in $nic_list; do
+    i4=$(ip a show dev "${nic}" | grep "inet " | awk '{print $2}' | awk '{print $1}')
+    if [[ ! -z "${i4}" ]]; then
+      ipv4="${i4}, ${ipv4}"
+    fi
+    i6=$(ip a show dev "${nic}" | grep "inet6" | grep -v "fe80" | awk  '{print $2}' | awk '{print $1}')
+    if [[ ! -z "${i6}" ]]; then
+      ipv6="${i6}, ${ipv6}"
+    fi
+done
+
+cat << EOF
+
+   Name: $(hostname).srv.pfuetze.xyz
+   Uptime: $(uptime | awk -F'( |,|:)+' '{print $6,$7",",$8,"hours,",$9,"minutes."}')
+
+   CPU(s): $(lscpu  | grep "CPU(s):" | grep -v "NUMA" | awk '{print $2}')
+   Memory: $(free -m | head -n 2 | tail -n 1 | awk '{print $2}')M
+   Disk: $(df -h / | awk '{ a = $2 } END { print a }')
+   Distro: $(lsb_release -s -d) with $(uname -r)
+
+   CPU Load: $(awk '{print $1 ", " $2 ", " $3}' /proc/loadavg)
+   Free Memory: $(free -m | head -n 2 | tail -n 1 | awk '{print $4}')M
+   Free Disk: $(df -h / | awk '{ a = $4 } END { print a }')
+
+   ipv4 Address: ${ipv4}
+   ipv6 Address: ${ipv6}
+
+EOF

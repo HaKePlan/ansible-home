@@ -1,0 +1,4 @@
+---
+debian_non_free: false
+
+motd_file: files/debian/motd

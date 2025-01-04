@@ -1,0 +1,78 @@
+---
+- hosts: all:!proxmox_nodes:!ipfire
+  become: true
+  tasks:
+    - name: Install base packages
+      ansible.builtin.package:
+        name: "{{ base_package_list | union(distribution_package_list | d([])) | union(host_package_list | d([])) }}"
+        state: present
+      tags:
+        - base_packages
+
+    - name: Deploy authorized_key to root
+      ansible.posix.authorized_key:
+        user: root
+        key: "{{ lookup('file', item) }}"
+        state: present
+      with_fileglob:
+        - public_keys/*
+      tags:
+        - ssh
+        - ssh_keys
+
+    - name: Remove old keys from root
+      ansible.posix.authorized_key:
+        user: root
+        key: "{{ lookup('file', item) }}"
+        state: absent
+      with_fileglob:
+        - public_keys-deprecated/*
+      tags:
+        - ssh
+        - ssh_keys
+
+    - name: Deploy vimrc to root
+      ansible.builtin.copy:
+        src: files/vimrc
+        dest: /root/.vimrc
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Deploy authorized_key to local user
+      ansible.posix.authorized_key:
+        user: "{{ local_user }}"
+        key: "{{ lookup('file', item) }}"
+        state: present
+      with_fileglob:
+        - public_keys/*
+      tags:
+        - ssh
+        - ssh_keys
+
+    - name: Remove old keys from local user
+      ansible.posix.authorized_key:
+        user: "{{ local_user }}"
+        key: "{{ lookup('file', item) }}"
+        state: absent
+      with_fileglob:
+        - public_keys-deprecated/*
+      tags:
+        - ssh
+        - ssh_keys
+
+    - name: Deploy vimrc to gigu
+      ansible.builtin.copy:
+        src: files/vimrc
+        dest: /home/gigu/.vimrc
+        owner: gigu
+        group: gigu
+        mode: "0640"
+      when: local_user == 'gigu'
+
+    - name: Add gigu to sudoers
+      ansible.builtin.user:
+        name: gigu
+        append: true
+        groups: sudo
+      when: local_user == 'gigu'
