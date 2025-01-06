@@ -1,0 +1,65 @@
+---
+- name: Install samba package
+  ansible.builtin.apt:
+    name:
+      - samba
+      - samba-common
+      - smbclient
+    state: present
+
+- name: Ensure Samba is running and set to start on boot.
+  ansible.builtin.systemd:
+    name: smbd
+    state: started
+    enabled: true
+
+- name: Create share User
+  ansible.builtin.user:
+    name: "{{ item.user }}"
+    password: "{{ item.password }}"
+  loop: "{{ samba_shares }}"
+  no_log: true
+
+- name: Create share directories
+  ansible.builtin.file:
+    path: "/srv/samba/{{ item.name }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ item.user }}"
+    group: "{{ item.user }}"
+  loop: "{{ samba_shares }}"
+
+- name: Shell - create samba users
+  ansible.builtin.shell: >
+    set -e -o pipefail
+    && (pdbedit --user={{ item.user }} 2>&1 > /dev/null)
+    || (echo '{{ item.plain_pw }}'; echo '{{ item.plain_pw }}')
+    | smbpasswd -s -a {{ item.user }}
+  args:
+    executable: /bin/bash
+  register: samba_create_users
+  changed_when: "'Added user' in samba_create_users.stdout"
+  loop: "{{ samba_shares }}"
+  no_log: true
+
+- name: Shell - set samba passwords correctly
+  ansible.builtin.shell: >
+    set -e -o pipefail
+    && (smbclient -U {{ item.user }}%{{ item.plain_pw }} -L 127.0.0.1 2>&1 > /dev/null)
+    || (echo '{{ item.plain_pw }}'; echo '{{ item.plain_pw }}')
+    | smbpasswd {{ item.user }}
+  args:
+    executable: /bin/bash
+  register: samba_verify_users
+  changed_when: "'New SMB password' in samba_verify_users.stdout"
+  loop: "{{ samba_shares }}"
+  no_log: true
+
+- name: Create Samba config
+  ansible.builtin.template:
+    src: templates/smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart-smb

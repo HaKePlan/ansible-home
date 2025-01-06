@@ -1,0 +1,28 @@
+---
+- hosts: timemachine01
+  become: true
+  roles:
+    - role: samba-share
+      tags: samba
+  pre_tasks:
+    - name: Create samba directory
+      ansible.builtin.file:
+        path: /srv/samba
+        state: directory
+        mode: '0755'
+
+    - name: Open the LUKS usb device
+      community.crypto.luks_device:
+        uuid: "{{ stifu.uuid }}"
+        state: "opened"
+        name: "{{ stifu.name }}"
+        passphrase: "{{ stifu.passphrase }}"
+      no_log: true
+
+    - name: Mount usb drive to vm
+      ansible.posix.mount:
+        path: /srv/samba
+        src: "/dev/mapper/{{ stifu.name }}"
+        state: mounted
+        fstype: ext4
+        opts: defaults,nofail

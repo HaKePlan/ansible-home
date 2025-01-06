@@ -8,7 +8,7 @@ and this repo here, provisions the VMs after the initial setup is done using clo
 The goal is to have a reproducible environment, that is easy to extend.
 
 ## Inventory
-The inventory is based on a dynamic Proxmox inventory, using tags as groups. This way adding new hosts to Ansible is done automatically, and no further steps are necessary.
+The inventory is based on a dynamic Proxmox inventory, using tags as groups. This way, adding new hosts to Ansible is done automatically, and no further steps are necessary.
 For hosts not provisioned by proxmox, they need to be added to `inventory/hosts`.
 
 ## Passwords
@@ -39,7 +39,7 @@ ansible --version
 ansible-galaxy install -r requirements.yml
 ```
 
-This repo uses the site.yml as entrypoint for the playbooks:
+This repo uses the site.yml as entry point for the playbooks:
 
 ```
 ansible-playbook site.yml
@@ -52,4 +52,18 @@ ansible-playbook site.yml --check --diff
 To get the dynamically created inventory, run:
 ```
 ansible-inventory --list
+```
+
+## Setup for new Hosts
+Run the basic setup for new host with:
+
+```
+ansible-playbook site.yml
+```
+
+After the basic setup by site.yml, run the role specific playbook (e.g):
+
+
+```
+ansible-playbook playbooks/nsupdate.yml
 ```

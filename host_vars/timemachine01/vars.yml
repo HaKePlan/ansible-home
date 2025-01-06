@@ -1,0 +1,17 @@
+host_package_list:
+  - cryptsetup
+
+stifu:
+  uuid: 5c323c6d-fd14-4b99-9635-80b2c216a1cf
+  name: stifu-drive
+  passphrase: "{{ vault_stifu_passphrase }}"
+
+
+
+samba_shares:
+  - name: pfuetze-time-machine
+    comment: Backup directory for TimeMachine
+    user: timemachine
+    password: "{{ vault_smb_timemachine_pw }}"
+    plain_pw: "{{ vault_smb_plain_timemachine_pw }}"
+    fruit_max_size: 1.5T
