@@ -1,0 +1,19 @@
+---
+- name: "Create dest directory for {{ service }}"
+  ansible.builtin.file:
+    path: "{{ systemd_docker_compose_services_basedir }}/{{ compose }}/{{ service }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: "Copy files for {{ compose }}-{{ service }}" # noqa: name[template]
+  ansible.builtin.copy:
+    src: "files/{{ compose }}/{{ service }}/{{ file }}"
+    dest: "{{ systemd_docker_compose_services_basedir }}/{{ compose }}/{{ service }}/{{ file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ files }}"
+  loop_control:
+    loop_var: file

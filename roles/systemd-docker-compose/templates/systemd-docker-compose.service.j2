@@ -1,0 +1,14 @@
+[Unit]
+Description=%i service in {{ systemd_docker_compose_services_basedir }}/%i
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/bin/bash -c "docker compose -f {{ systemd_docker_compose_services_basedir }}/%i/docker-compose.yml pull"
+ExecStart=/bin/bash -c "docker compose -f {{ systemd_docker_compose_services_basedir }}/%i/docker-compose.yml up --detach"
+ExecStop=/bin/bash -c "docker compose -f {{ systemd_docker_compose_services_basedir }}/%i/docker-compose.yml down"
+
+[Install]
+WantedBy=multi-user.target

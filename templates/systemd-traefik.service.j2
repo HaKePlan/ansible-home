@@ -1,0 +1,44 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+[Unit]
+Description=Traefik for Docker containers
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=/usr/bin/docker pull traefik:{{ traefik_version }}
+ExecStart=/usr/bin/docker run \
+        --rm \
+        --name traefik \
+        --network=traefik \
+        {% for endpoint in traefik.endpoints %}
+        --publish {{ endpoint.port }}:{{ endpoint.port }} \
+        {% endfor %}
+        --publish 8080:8080 \
+        --volume /var/run/docker.sock:/var/run/docker.sock:ro \
+        traefik:{{ traefik_version }} \
+        traefik \
+        "--providers.docker=true" \
+        "--providers.docker.exposedbydefault=false" \
+        {% for endpoint in traefik.endpoints %}
+        "--entrypoints.{{ endpoint.name }}.address=:{{ endpoint.port }}" \
+        {% endfor %}
+        "--entryPoints.web.forwardedHeaders.insecure" \
+        "--log.level={{ traefik.log_level }}" \
+        "--accesslog=false" \
+        {% if traefik.force_https | d(False) %}
+        "--entrypoints.web.http.redirections.entrypoint.to=websecure" \
+        "--entrypoints.web.http.redirections.entrypoint.scheme=https" \
+        {% endif %}
+        {% if traefik.letsencrypt | d(False) %}
+        "--certificatesresolvers.le.acme.email=admin@mpetermann.ch" \
+        "--certificatesresolvers.le.acme.storage=acme.json" \
+        "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web" \
+        {% endif %}
+        "--metrics.prometheus=true" \
+        "--api.dashboard=true" \
+        "--api.insecure=true"
+
+[Install]
+WantedBy=multi-user.target

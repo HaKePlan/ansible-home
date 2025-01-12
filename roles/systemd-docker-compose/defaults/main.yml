@@ -1,0 +1,3 @@
+systemd_docker_compose_services_basedir: /srv
+systemd_docker_compose_template: templates/docker-compose.yml.j2
+systemd_docker_compose_services: {}

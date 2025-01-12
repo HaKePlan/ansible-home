@@ -1,0 +1,17 @@
+---
+- name: Stop & disable docker compose
+  ansible.builtin.systemd_service:
+    name: "docker-compose@{{ item.key }}.service"
+    enabled: false
+    state: stopped
+  register: docker_compose
+
+- name: "Remove basedir for {{ item.key }}"
+  ansible.builtin.file:
+    path: "{{ systemd_docker_compose_services_basedir }}/{{ item.key }}"
+    state: absent
+
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when: docker_compose is changed # noqa: no-handler

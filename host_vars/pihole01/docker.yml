@@ -1,0 +1,17 @@
+systemd_docker_compose_services:
+  pihole:
+    pihole:
+      image: pihole/pihole:2024.07.0
+      ports:
+        - "53:53/tcp"
+        - "53:53/udp"
+        - "80:80/tcp"
+      env:
+        TZ: "Europe/Zurich"
+        WEBPASSWORD: "{{ vault_pihole_password }}"
+        DHCP_ACTIVE: "false"
+        PIHOLE_DOMAIN: "srv.pfuetze.xyz"
+        PIHOLE_DNS_: 10.130.2.1
+        DNS_BOGUS_PRIV: false
+      volumes:
+        - './etc-pihole:/etc/pihole:rw'

@@ -6,8 +6,6 @@ stifu:
   name: stifu-drive
   passphrase: "{{ vault_stifu_passphrase }}"
 
-
-
 samba_shares:
   - name: pfuetze-time-machine
     comment: Backup directory for TimeMachine

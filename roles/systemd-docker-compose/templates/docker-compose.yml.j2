@@ -1,0 +1,98 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+# {{ ansible_managed }}
+---
+{% set ns = namespace(docker_volumes={}) %}
+services:
+  {% for name,service in item.value.items() if ( (service.state | d("present")) == "present" ) %}
+  {{ name }}:
+    image: {{ service.image }}
+    restart: unless-stopped
+    {% if "entrypoint" in service %}
+    entrypoint: "{{ service.entrypoint }}"
+    {% endif %}
+    {% if "sysctl" in service %}
+    sysctls:
+    {% for k,v in service.sysctl.items() %}
+      {{ k }}: {{ v }}
+    {% endfor %}
+    {% endif %}
+    {% if "command" in service %}
+    command:
+    {% for c in service.command %}
+      - {{ c }}
+    {% endfor %}
+    {% endif %}
+    {% if "env" in service %}
+    env_file: {{ systemd_docker_compose_services_basedir }}/{{ item.key }}/{{ name }}.env
+    {% endif %}
+    {% if "ports" in service %}
+    ports:
+      {% for port in service.ports %}
+      - {{ port }}
+      {% endfor %}
+    {% endif %}
+    {% if "depends" in service %}
+    depends_on:
+      {% for d in service.depends %}
+      - {{ d }}
+      {% endfor %}
+    {% endif %}
+    {% if "volumes" in service %}
+    volumes:
+      {% for vol in service.volumes %}
+      {% if vol is string %}
+      - {{ vol }}
+      {% if '/' not in vol.split(':')[0] %}
+      {% set _ = ns.docker_volumes.update({vol.split(':')[0]: ""}) %}
+      {% endif %}
+      {% else %}
+      - {{ vol | ansible.builtin.to_nice_yaml(indent=2,sort_keys=false) | indent(8) }}
+      {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if ("labels" in service) or ( "traefik_hostnames" in service ) %}
+    labels:
+      {% if "traefik_hostnames" in service %}
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
+      - 'traefik.http.routers.{{ item.key }}-{{ name }}.entrypoints=web'
+      - 'traefik.http.routers.{{ item.key }}-{{ name }}.rule={% for host in (service.traefik_hostnames | d([]) ) %}Host(`{{ host }}`){% if not loop.last %} || {% endif %}{% endfor %}'
+      {% if "traefik_port" in service %}
+      - 'traefik.http.services.{{ item.key }}-{{ name }}.loadbalancer.server.port={{ service.traefik_port }}'
+      {% endif %}
+      {% endif %}
+      {% for l in ( service.labels | d([]) ) %}
+      - '{{ l }}'
+      {% endfor %}
+    {% endif %}
+    {% if "healthcheck" in service %}
+    healthcheck:
+      {{ service.healthcheck | to_nice_yaml(indent=6) }}
+    {% endif %}
+    {% if ( service.host_network | d(false) ) %}
+    network_mode: "host"
+    {% else %}
+    networks:
+      {% for net in (service.networks | d(["default"]))%}
+      - {{ net }}
+      {% endfor %}
+      {% if "traefik_hostnames" in service %}
+      - traefik-proxy
+      {% endif %}
+    {% endif %}
+
+  {% endfor %}
+
+networks:
+  default:
+    driver: bridge
+  traefik-proxy:
+    name: traefik
+    external: true
+
+{% if ns.docker_volumes %}
+volumes:
+{% for vol,_ in ns.docker_volumes.items() %}
+  {{ vol }}:
+{% endfor %}
+{% endif %}

@@ -1,0 +1,11 @@
+---
+- hosts: docker
+  become: true
+  roles:
+    - role: systemd-docker-compose
+      tags:
+        - compose
+  pre_tasks:
+    - name: Add cadvisor to systemd_docker_compose_services
+      ansible.builtin.set_fact:
+        systemd_docker_compose_services: "{{ systemd_docker_compose_services | combine(docker_compose_cadvisor) }}"

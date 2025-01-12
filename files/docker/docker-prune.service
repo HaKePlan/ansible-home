@@ -1,0 +1,7 @@
+[Unit]
+Description=Docker system prune
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker system prune -af --volumes
+WorkingDirectory=/tmp

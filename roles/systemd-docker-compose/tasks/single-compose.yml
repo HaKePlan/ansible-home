@@ -1,0 +1,53 @@
+---
+- name: "Create basedir for {{ item.key }}"
+  ansible.builtin.file:
+    path: "{{ systemd_docker_compose_services_basedir }}/{{ item.key }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create env file
+  ansible.builtin.template:
+    src: templates/loop-dump.j2
+    dest: "{{ systemd_docker_compose_services_basedir }}/{{ item.key }}/{{ service.key }}.env"
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    dump_var: "{{ service.value.env }}"
+  loop: "{{ item.value | dict2items }}"
+  no_log: true
+  loop_control:
+    loop_var: service
+  register: env_file
+  when: "'env' in service.value"
+
+- name: Copy files
+  ansible.builtin.include_tasks: copy-files.yml
+  vars:
+    compose: "{{ item.key }}"
+    service: "{{ svc.key }}"
+    files: "{{ svc.value.files }}"
+  loop: "{{ item.value | dict2items }}"
+  loop_control:
+    loop_var: svc
+  when: "'files' in svc.value"
+
+- name: Create docker-compose config
+  ansible.builtin.template:
+    src: "{{ item.compose_template | d(systemd_docker_compose_template) }}"
+    dest: "{{ systemd_docker_compose_services_basedir }}/{{ item.key }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  register: docker_compose
+
+- name: Reload/Enable/Restart
+  ansible.builtin.systemd_service:
+    name: "docker-compose@{{ item.key }}.service"
+    enabled: true
+    daemon_reload: true
+    state: restarted
+  when:
+    - (docker_compose is changed) or (env_file is changed) # noqa: no-handler

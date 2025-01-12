@@ -1,0 +1,82 @@
+---
+- hosts: docker
+  become: true
+  roles:
+    - role: geerlingguy.docker
+      tags:
+        - docker
+  tasks:
+    - name: Copy prune service
+      ansible.builtin.copy:
+        src: files/docker/docker-prune.service
+        dest: /etc/systemd/system/docker-prune.service
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Copy timer
+      ansible.builtin.copy:
+        src: files/docker/docker-prune.timer
+        dest: /etc/systemd/system/docker-prune.timer
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Enable prune timer
+      ansible.builtin.systemd:
+        name: docker-prune.timer
+        enabled: true
+        daemon_reload: true
+        state: started
+
+    - name: Enable unattended-upgrades for docker
+      ansible.builtin.copy:
+        src: files/debian/unattended-upgrades/docker
+        dest: /etc/apt/apt.conf.d/80docker
+        owner: root
+        group: root
+        mode: "0644"
+      tags:
+        - upgrades
+
+- hosts: docker:&traefik
+  handlers:
+    - name: Restart traefik
+      ansible.builtin.systemd:
+        name: traefik.service
+        state: restarted
+  tasks:
+    - name: Install python3-docker
+      ansible.builtin.package:
+        name: python3-docker
+        state: present
+      tags:
+        - traefik
+
+    - name: Create systemd-traefik service
+      ansible.builtin.template:
+        src: templates/systemd-traefik.service.j2
+        dest: /etc/systemd/system/traefik.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart traefik
+      tags:
+        - traefik
+
+    - name: Create traefik_proxy network
+      community.docker.docker_network:
+        name: traefik
+      tags:
+        - traefik
+
+    - name: Enable systemd-traefik
+      ansible.builtin.systemd:
+        name: traefik.service
+        enabled: true
+        daemon_reload: true
+        state: started
+      tags:
+        - traefik
+
+- ansible.builtin.import_playbook: docker-compose.yml

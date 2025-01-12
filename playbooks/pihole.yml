@@ -1,0 +1,14 @@
+---
+- hosts: pihole01
+  become: true
+  pre_tasks:
+    - name: Populate service facts
+      ansible.builtin.service_facts:
+    - name: Disable systemd-resolved
+      ansible.builtin.systemd:
+        name: systemd-resolved.service
+        enabled: false
+        state: stopped
+      when: "'systemd-resolved.service' in services"
+
+- ansible.builtin.import_playbook: docker.yml
