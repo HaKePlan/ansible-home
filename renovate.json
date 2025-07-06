@@ -9,7 +9,7 @@
     ":semanticCommitTypeAll(chore)",
     "docker:enableMajor"
   ],
-  "dockerfile": {
+  "docker-compose": {
     "managerFilePatterns": ["/^docker/.*\\.yaml$/"]
   }
 }
