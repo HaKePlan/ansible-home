@@ -1,6 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "config:best-practices",
+    ":semanticCommits",
+    ":semanticCommitScope(deps)",
+    "group:linters",
+    ":semanticCommitTypeAll(chore)",
+    "docker:enableMajor"
   ]
 }
