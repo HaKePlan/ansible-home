@@ -9,9 +9,12 @@
     ":semanticCommitTypeAll(chore)",
     "docker:enableMajor"
   ],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["inventory/host_vars/.*/docker.yml$"],
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/inventory/host_vars/.*/docker.yml$/"
+      ],
       "matchStrings": [
         "image:\\s*(?<depName>[^\\s:]+/[^\\s:]+):(?<currentValue>[\\w\\d\\.-]+)"
       ],
