@@ -10,6 +10,6 @@
     "docker:enableMajor"
   ],
   "docker-compose": {
-    "managerFilePatterns": ["/^docker/.*\\.yaml$/"]
+    "managerFilePatterns": ["docker.yml$"]
   }
 }
