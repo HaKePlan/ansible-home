@@ -13,7 +13,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/inventory/host_vars/.*/docker.yml$/"
+        "**/docker.yml$/"
       ],
       "matchStrings": [
         "image:\\s*(?<depName>[^\\s:]+/[^\\s:]+):(?<currentValue>[\\w\\d\\.-]+)"
