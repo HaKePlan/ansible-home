@@ -11,14 +11,9 @@
   ],
   "customManagers": [
     {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "**/docker.yml$/"
-      ],
-      "matchStrings": [
-        "image:\\s*(?<depName>[^\\s:]+/[^\\s:]+):(?<currentValue>[\\w\\d\\.-]+)"
-      ],
-      "datasourceTemplate": "docker"
+      "dockerfile": {
+        "managerFilePatterns": ["/^docker/.*\\.yaml$/"]
+      }
     }
   ]
 }
