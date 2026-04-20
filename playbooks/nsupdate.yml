@@ -1,24 +1,36 @@
 ---
-- hosts: nsupdate01
+- hosts: dyndns01
   become: true
-  roles:
-    - role: wireguard-client
-      tags: wireguard
   tasks:
-    - name: Copy nsupdate bash script
+    - name: Ensure cron package is installed
+      ansible.builtin.package:
+        name: cron
+        state: present
+      tags: dyndns-imk
+
+    - name: Check whether crontab is available
+      ansible.builtin.command: which crontab
+      register: crontab_cmd
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      tags: dyndns-imk
+
+    - name: Copy dyndns-imk bash script
       ansible.builtin.copy:
-        src: files/nsupdate
-        dest: /home/gigu/nsupdate.sh
+        src: files/dyndns-imk
+        dest: /home/gigu/dyndns-imk.sh
         owner: gigu
         group: gigu
         mode: '0755'
-      tags: nsupdate
+      tags: dyndns-imk
 
-    - name: Create cronjob for nsupdate script
+    - name: Create cronjob for dyndns-imk script
       ansible.builtin.cron:
-        name: Update ddyn daily
-        minute: "0"
+        name: Update dyndns daily
+        minute: "05"
         hour: "6"
-        job: "~/nsupdate.sh -k {{ nsupdate.key }} -f {{ nsupdate.secret_key }} -d {{ nsupdate.domain }} -z {{ nsupdate.zone }} -s {{ nsupdate.server }}"
+        job: "~/dyndns-imk.sh -u {{ dyndns_imk.user }} -p {{ dyndns_imk.password }} -d {{ dyndns_imk.domain }}"
         user: gigu
-      tags: nsupdate
+      when: crontab_cmd.rc == 0
+      tags: dyndns-imk

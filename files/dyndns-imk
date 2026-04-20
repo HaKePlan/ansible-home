@@ -1,0 +1,49 @@
+#!/bin/bash
+# This script fetches the current external IP Address
+# Then performs an api call to the infomaniak dynamic dns update
+# This script should be placed on a 10 minute crontab
+#
+# note: https://faq.infomaniak.com/2376
+
+
+usage="$(basename "$0") [-h] -u <USERNAME> -p <PASSWORD> -d <DOMAIN> -- Update DNS A records using the infomaniak dyndns API
+
+where:
+    -h , --help         show this help text
+    -u , --username     username
+    -p , --password     password
+    -d , --domain       domain to update"
+
+DOMAIN=""
+PASSWORD=""
+USERNAME=""
+DEBUG=false
+
+while [ "$1" != "" ]; do
+    case $1 in
+
+        -u | --username )       shift
+                                USERNAME=$1
+                                ;;
+        -p | --password )       shift
+                                PASSWORD=$1
+                                ;;
+        -d | --domain )         shift
+                                DOMAIN=$1
+                                ;;
+        --debug )               DEBUG=true
+                                ;;
+        -h | --help )           echo "$usage"
+                                exit
+                                ;;
+        * )                     echo "$usage"
+                                exit 1
+    esac
+    shift
+done
+
+CURL=$(which curl)
+
+IP=$($CURL -q -O - ip.ddyn.ch)
+
+$CURL -u "$USERNAME:$PASSWORD" "https://infomaniak.com/nic/update?hostname=$DOMAIN&myip=$IP"

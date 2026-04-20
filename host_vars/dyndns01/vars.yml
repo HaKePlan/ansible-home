@@ -1,0 +1,7 @@
+host_package_list:
+  - dnsutils
+
+dyndns_imk:
+  user: "{{ vault_dyndns_imk_user_pfuetze }}"
+  password: "{{ vault_dyndns_imk_password_pfuetze }}"
+  domain: pfuetze.clauss.swiss

@@ -2,7 +2,7 @@
 # More complete example demonstrating the use of 'want_facts' and the constructed options
 # Note that using facts returned by 'want_facts' in constructed options requires 'want_facts=true'
 # my.proxmox.yml
-plugin: community.general.proxmox
+plugin: community.proxmox.proxmox
 url: https://chuebel.admin.pfuetze.xyz:8006
 user: gigu@pam
 password: !vault |
