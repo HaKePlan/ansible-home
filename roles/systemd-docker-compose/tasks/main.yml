@@ -10,9 +10,11 @@
 - name: Include task to create service
   ansible.builtin.include_tasks: single-compose.yml
   when: '"present" == (item.value.state | d("present"))'
+  no_log: true
   loop: "{{ systemd_docker_compose_services | dict2items }}"
 
 - name: Cleanup
   ansible.builtin.include_tasks: single-compose-decomission.yml
   when: '"absent" == (item.value.state | d("present"))'
+  no_log: true
   loop: "{{ systemd_docker_compose_services | dict2items }}"

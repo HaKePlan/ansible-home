@@ -1,4 +1,4 @@
-#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+#jinja2: lstrip_blocks: True, trim_blocks: True
 # {{ ansible_managed }}
 ---
 {% set ns = namespace(docker_volumes={}) %}
@@ -67,7 +67,7 @@ services:
     {% endif %}
     {% if "healthcheck" in service %}
     healthcheck:
-      {{ service.healthcheck | to_nice_yaml(indent=6) }}
+{{ service.healthcheck | to_nice_yaml(indent=2) | indent(6, true) }}
     {% endif %}
     {% if ( service.host_network | d(false) ) %}
     network_mode: "host"
