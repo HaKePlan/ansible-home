@@ -1,0 +1,121 @@
+---
+- ansible.builtin.import_playbook: ../site.yml
+- ansible.builtin.import_playbook: docker.yml
+
+- hosts: bina01
+  become: true
+  tasks:
+    - name: Checkout data pipeline repository
+      become: true
+      become_user: "{{ local_user }}"
+      ansible.builtin.git:
+        repo: "{{ bina_repo_url }}"
+        dest: "{{ bina_repo_dir }}"
+        version: "{{ bina_repo_version }}"
+        update: true
+
+    - name: Create runtime .env file
+      become: true
+      become_user: "{{ local_user }}"
+      ansible.builtin.copy:
+        dest: "{{ bina_repo_dir }}/.env"
+        mode: "0640"
+        content: |
+          # Database Configuration
+          DB_HOST={{ bina_db_host }}
+          DB_PORT={{ bina_db_port }}
+          DB_NAME={{ bina_db_name }}
+          DB_USER={{ bina_db_user }}
+          DB_PASSWORD={{ vault_data_processing_postgres_password }}
+
+          # Postgres Configuration
+          POSTGRES_USER={{ bina_db_user }}
+          POSTGRES_PASSWORD={{ vault_data_processing_postgres_password }}
+
+    - name: Ensure logs directory exists
+      become: true
+      become_user: "{{ local_user }}"
+      ansible.builtin.file:
+        path: "{{ bina_repo_dir }}/logs"
+        state: directory
+        mode: "0755"
+
+    - name: Install project Python dependencies in virtualenv
+      become: true
+      become_user: "{{ local_user }}"
+      ansible.builtin.pip:
+        requirements: "{{ bina_repo_dir }}/requirements.txt"
+        virtualenv: "{{ bina_python_venv }}"
+        virtualenv_command: python3 -m venv
+
+    - name: Pin NumPy to a compatible version
+      become: true
+      become_user: "{{ local_user }}"
+      ansible.builtin.pip:
+        name: numpy==1.26.4
+        extra_args: --no-cache-dir
+        virtualenv: "{{ bina_python_venv }}"
+
+    - name: Wait for PostgreSQL to accept connections
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ bina_db_port }}"
+        timeout: 120
+
+    - name: Create database and apply schema if not initialized
+      become: true
+      become_user: "{{ local_user }}"
+      when: not ansible_check_mode
+      ansible.builtin.shell: |
+        set -euo pipefail
+        "{{ bina_python_venv }}/bin/python" - <<'PY'
+        from pathlib import Path
+        import psycopg2
+        from psycopg2 import sql
+
+        admin_conn = psycopg2.connect(
+          host="{{ bina_db_host }}",
+          port={{ bina_db_port }},
+          dbname="postgres",
+          user="{{ bina_db_user }}",
+          password="{{ vault_data_processing_postgres_password }}",
+        )
+        admin_conn.autocommit = True
+        admin_cur = admin_conn.cursor()
+
+        db_name = "{{ bina_db_name }}"
+        admin_cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,))
+        if admin_cur.fetchone() is None:
+          admin_cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name)))
+          print(f"DATABASE_CREATED:{db_name}")
+
+        admin_cur.close()
+        admin_conn.close()
+
+        schema_sql = Path("db/init.sql").read_text()
+        conn = psycopg2.connect(
+          host="{{ bina_db_host }}",
+          port={{ bina_db_port }},
+          dbname=db_name,
+          user="{{ bina_db_user }}",
+          password="{{ vault_data_processing_postgres_password }}",
+        )
+        cur = conn.cursor()
+        cur.execute("SELECT to_regclass('public.precipitation_10min')")
+        exists = cur.fetchone()[0] is not None
+
+        if exists:
+          print(f"SCHEMA_PRESENT:{db_name}")
+        else:
+          cur.execute(schema_sql)
+          conn.commit()
+          print(f"SCHEMA_APPLIED:{db_name}")
+
+        cur.close()
+        conn.close()
+        PY
+      args:
+        executable: /bin/bash
+        chdir: "{{ bina_repo_dir }}"
+      register: bina_schema_result
+      changed_when: "'DATABASE_CREATED:' in bina_schema_result.stdout or 'SCHEMA_APPLIED:' in bina_schema_result.stdout"

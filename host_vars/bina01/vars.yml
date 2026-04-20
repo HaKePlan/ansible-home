@@ -1,0 +1,16 @@
+host_package_list:
+  - python3
+  - python3-venv
+  - python3-pip
+  - python3-dev
+  - tmux
+
+bina_repo_url: https://github.com/HaKePlan/bfh-bina-project.git
+bina_repo_version: main
+bina_repo_dir: "/home/{{ local_user }}/bfh-bina-project"
+bina_python_venv: "{{ bina_repo_dir }}/.venv"
+
+bina_db_host: localhost
+bina_db_port: 5432
+bina_db_name: sbb_precipitation
+bina_db_user: postgres
